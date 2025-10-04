@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Toy Art</title>
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#3c1053,#ad5389); color:white; display:flex; justify-content:center; align-items:center; height:100vh; text-align:center;}
+#app { width:100%; max-width:600px; padding:20px; }
+h1,h2 { margin-bottom:20px; }
+button { display:block; margin:10px auto; padding:12px 20px; border:none; border-radius:10px; font-size:1rem; cursor:pointer; width:80%; max-width:300px; transition:transform 0.2s;}
+button:hover { transform:scale(1.05);}
+input { padding:10px; border-radius:8px; border:none; width:80%; max-width:300px; margin-bottom:15px;}
+#timer { font-size:1.2rem; margin:10px 0; font-weight:bold; background:rgba(255,255,255,0.2); padding:8px; border-radius:10px; width:fit-content; margin-left:auto; margin-right:auto;}
+#pergunta { font-size:1.3rem; margin:20px 0; }
+#resultado { font-size:1.2rem; margin-top:20px; }
+.sala { background:#6a0572; padding:10px; border-radius:10px; margin:5px; cursor:pointer; }
+#ranking { margin-top:20px; text-align:left; background: rgba(0,0,0,0.3); padding:10px; border-radius:10px; }
+#ranking h3 { margin-bottom:10px; }
+#ranking ul { list-style:none; padding:0; }
+#ranking li { margin:5px 0; font-weight:bold; }
+</style>
+</head>
+<body>
+<div id="app">
+<h1>🎨 Quiz Toy Art</h1>
+
+<div id="tela-inicio">
+  <input id="nome" type="text" placeholder="Digite seu nome/apelido">
+  <button onclick="menuPrincipal()">Entrar</button>
+</div>
+
+<div id="tela-menu" style="display:none;">
+  <h2>Bem-vindo!</h2>
+  <button onclick="modoSolo()">Jogar Sozinho</button>
+  <button onclick="mostrarSalas()">Salas</button>
+</div>
+
+<div id="tela-salas" style="display:none;">
+  <h2>Salas Criadas</h2>
+  <div id="lista-salas"></div>
+  <button onclick="criarSala()">➕ Criar Sala</button>
+  <button onclick="voltarMenu()">⬅ Voltar</button>
+</div>
+
+<div id="tela-sala" style="display:none;">
+  <h2 id="titulo-sala"></h2>
+  <div id="jogadores-sala"></div>
+  <div id="controles-dono" style="display:none;">
+    <h3>Escolha a dificuldade:</h3>
+    <button onclick="iniciarParaTodos('normal')">Normal</button>
+  </div>
+  <button onclick="sairSala()">Sair da Sala</button>
+</div>
+
+<div id="tela-jogo" style="display:none;">
+  <div id="timer"></div>
+  <div id="pergunta"></div>
+  <div id="opcoes"></div>
+</div>
+
+<div id="tela-fim" style="display:none;">
+  <h2>Fim de Jogo!</h2>
+  <div id="resultado"></div>
+  <div id="ranking"></div>
+  <button onclick="voltarMenu()">Menu Principal</button>
+</div>
+</div>
+
+<script>
+// ==================== VARIÁVEIS ====================
+let jogador="", acertos=0, erros=0, totalPerguntas=25, perguntaAtual=0, dificuldadeEscolhida="", tempoRestante, intervalo;
+let salaAtual=null;
+const cores=["#FF5733","#33FF57","#3357FF","#F3FF33","#FF33F6","#33FFF3","#FF8C33"];
+const dificuldades={normal:50};
+let salas=JSON.parse(localStorage.getItem("salas")||"[]");
+
+// ==================== PERGUNTAS NORMAL ====================
+const perguntas={
+normal:[
+{q:"O que é Toy Art?", op:["Arte em forma de brinquedo","Boneco comum","Videogame","Quadro"], c:"Arte em forma de brinquedo"},
+{q:"Qual artista criou toys inspirados em cultura pop?", op:["Takashi Murakami","Van Gogh","Picasso","Da Vinci"], c:"Takashi Murakami"},
+{q:"Funko Pop é um exemplo de:", op:["Toy Art","Videogame","Action figure","Pelúcia comum"], c:"Toy Art"},
+{q:"Dunny e Munny são criados por qual marca?", op:["Kidrobot","LEGO","Disney","Hasbro"], c:"Kidrobot"},
+{q:"Qual característica típica do Toy Art?", op:["Cabeças grandes e cores vibrantes","Somente tamanho pequeno","Funcionalidade prática","Somente cores neutras"], c:"Cabeças grandes e cores vibrantes"},
+{q:"Toy Art serve para:", op:["Contar histórias sem palavras","Ensinar matemática","Cozinhar","Brincar apenas"], c:"Contar histórias sem palavras"},
+{q:"Onde podemos encontrar Toy Art?", op:["Exposições, lojas e coleções","Supermercados","Escolas","Farmácias"], c:"Exposições, lojas e coleções"},
+{q:"O que diferencia Toy Art de brinquedo comum?", op:["É arte, não feito para brincar","Tem motor","É de madeira","É menor"], c:"É arte, não feito para brincar"},
+{q:"KAWS é um exemplo de:", op:["Artista de Toy Art","Jogador de futebol","Cantor","Chef de cozinha"], c:"Artista de Toy Art"},
+{q:"Toy Art japonês é conhecido por:", op:["Detalhes e cultura pop","Brincadeira infantil","Praticidade","Somente cores neutras"], c:"Detalhes e cultura pop"},
+{q:"Qual público principal do Toy Art?", op:["Colecionadores","Crianças pequenas","Professores","Atletas"], c:"Colecionadores"},
+{q:"Toy Art limitado é valorizado por:", op:["Exclusividade","Produção em massa","Preço baixo","Funcionalidade"], c:"Exclusividade"},
+{q:"Um Dunny customizado é:", op:["Único e artístico","Somente brinquedo","Pelúcia","Somente LEGO"], c:"Único e artístico"},
+{q:"Toy Art pode misturar:", op:["Arte, design e cultura pop","Matemática e física","Comida e bebida","Esporte e música"], c:"Arte, design e cultura pop"},
+{q:"O que é mais valorizado em Toy Art?", op:["Design, cores e criatividade","Preço","Quantidade","Funcionalidade"], c:"Design, cores e criatividade"},
+{q:"Toy Art existe para:", op:["Deixar o mundo mais criativo","Cozinhar","Ensinar matemática","Fazer publicidade"], c:"Deixar o mundo mais criativo"},
+{q:"Cabeças grandes e olhos expressivos são:", op:["Características típicas de Toy Art","Funções práticas","Características de brinquedos comuns","Somente brinquedos infantis"], c:"Características típicas de Toy Art"},
+{q:"Toy Art pode estar em:", op:["Exposições e lojas de arte","Supermercados","Escolas","Farmácias"], c:"Exposições e lojas de arte"},
+{q:"Por que artistas criam Toy Art?", op:["Mostrar ideias diferentes e divertir","Substituir brinquedos","Para publicidade","Para estudar"], c:"Mostrar ideias diferentes e divertir"},
+{q:"Qual material é comum em Toy Art?", op:["Vinil","Concreto","Vidro","Metal pesado"], c:"Vinil"},
+{q:"Toy Art pode ter estilo:", op:["Bonitinho, estranho ou engraçado","Só realista","Só futurista","Só sério"], c:"Bonitinho, estranho ou engraçado"},
+{q:"Exemplo de Toy Art famoso:", op:["Funko Pop","Barbie","Playmobil","Videogame"], c:"Funko Pop"},
+{q:"Toy Art pode contar histórias:", op:["Sem usar palavras","Só com livros","Só com palavras","Só filmes"], c:"Sem usar palavras"},
+{q:"O que os olhos e cores vibrantes representam?", op:["Expressão artística e criatividade","Brincadeira infantil","Função prática","Regras do jogo"], c:"Expressão artística e criatividade"},
+{q:"Qual é a conclusão sobre Toy Art?", op:["É uma mistura de brinquedo com arte","É apenas para crianças","É feito apenas para vender","É um brinquedo qualquer"], c:"É uma mistura de brinquedo com arte"}
+]
+};
+
+// ==================== FUNÇÕES ====================
+function embaralharArray(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+// ---------- MENU ----------
+function menuPrincipal(){
+  jogador=document.getElementById("nome").value||"Jogador";
+  document.getElementById("tela-inicio").style.display="none";
+  document.getElementById("tela-menu").style.display="block";
+}
+
+// ---------- SALAS ----------
+function mostrarSalas(){
+  document.getElementById("tela-menu").style.display="none";
+  document.getElementById("tela-salas").style.display="block";
+  atualizarSalas();
+}
+
+function atualizarSalas(){
+  let div=document.getElementById("lista-salas");
+  div.innerHTML="";
+  salas.forEach((s,i)=>{
+    let d=document.createElement("div");
+    d.className="sala";
+    d.innerText=`Sala ${i+1} - Jogadores: ${s.jogadores.join(", ")}`;
+    d.onclick=()=>entrarSala(i);
+    div.appendChild(d);
+  });
+}
+
+function criarSala(){
+  let senha=prompt("Digite uma senha para a sala:");
+  if(!senha) return;
+  salas.push({jogadores:[jogador], dono:jogador, senha:senha, ranking:[]});
+  localStorage.setItem("salas",JSON.stringify(salas));
+  atualizarSalas();
+}
+
+function entrarSala(id){
+  let sala=salas[id];
+  let senha=prompt("Digite a senha da sala:");
+  if(senha!==sala.senha){ alert("Senha incorreta!"); return; }
+  if(!sala.jogadores.includes(jogador)) sala.jogadores.push(jogador);
+  salaAtual=id;
+  localStorage.setItem("salas",JSON.stringify(salas));
+  mostrarSala();
+}
+
+function mostrarSala(){
+  document.querySelectorAll("#tela-menu,#tela-salas").forEach(div=>div.style.display="none");
+  document.getElementById("tela-sala").style.display="block";
+  let sala=salas[salaAtual];
+  document.getElementById("titulo-sala").innerText=`Sala ${salaAtual+1}`;
+  document.getElementById("jogadores-sala").innerText="Jogadores: "+sala.jogadores.join(", ");
+  document.getElementById("controles-dono").style.display=(sala.dono===jogador)?"block":"none";
+}
+
+// ---------- JOGO ----------
+function modoSolo(){ iniciarJogo('normal'); }
+function iniciarParaTodos(d){ iniciarJogo(d); }
+
+function iniciarJogo(d){
+  dificuldadeEscolhida=d;
+  acertos=0; erros=0; perguntaAtual=0;
+  document.getElementById("tela-sala").style.display="none";
+  document.getElementById("tela-menu").style.display="none";
+  document.getElementById("tela-jogo").style.display="block";
+  embaralharPerguntas();
+  mostrarPergunta();
+}
+
+function embaralharPerguntas(){ perguntas[dificuldadeEscolhida]=embaralharArray(perguntas[dificuldadeEscolhida]); }
+
+function mostrarPergunta(){
+  if(perguntaAtual>=totalPerguntas){ fimJogo(); return; }
+  let p=perguntas[dificuldadeEscolhida][perguntaAtual];
+  document.getElementById("pergunta").innerText=p.q;
+  let ops=embaralharArray([...p.op]);
+  let div=document.getElementById("opcoes");
+  div.innerHTML="";
+  ops.forEach(o=>{
+    let btn=document.createElement("button");
+    btn.innerText=o;
+    btn.style.background=cores[Math.floor(Math.random()*cores.length)];
+    btn.onclick=()=>responder(o,p.c);
+    div.appendChild(btn);
+  });
+  tempoRestante=dificuldades[dificuldadeEscolhida];
+  document.getElementById("timer").innerText=`⏳ ${tempoRestante}s`;
+  clearInterval(intervalo);
+  intervalo=setInterval(()=>{
+    tempoRestante--;
+    document.getElementById("timer").innerText=`⏳ ${tempoRestante}s`;
+    if(tempoRestante<=0){ clearInterval(intervalo); erros++; perguntaAtual++; mostrarPergunta(); }
+  },1000);
+}
+
+function responder(resposta,certa){
+  clearInterval(intervalo);
+  if(resposta===certa) acertos++; else erros++;
+  perguntaAtual++;
+  mostrarPergunta();
+}
+
+// ---------- FIM JOGO ----------
+function fimJogo(){
+  document.getElementById("tela-jogo").style.display="none";
+  document.getElementById("tela-fim").style.display="block";
+  document.getElementById("resultado").innerText=`${jogador}, você acertou ${acertos} e errou ${erros}!`;
+
+  let rankingHtml="<h3>🏆 Ranking:</h3><ul>";
+  if(salaAtual!==null){
+    let sala=salas[salaAtual];
+    sala.ranking=sala.ranking.filter(r=>r.nome!==jogador);
+    sala.ranking.push({nome:jogador, acertos, erros});
+    sala.ranking.sort((a,b)=>b.acertos-a.acertos);
+    sala.ranking.forEach((j,i)=>rankingHtml+=`<li style="color:${cores[i%cores.length]}">${i+1}º - ${j.nome}: ${j.acertos} acertos, ${j.erros} erros</li>`);
+    localStorage.setItem("salas",JSON.stringify(salas));
+  }else{
+    rankingHtml+=`<li>${jogador} - ${acertos} acertos, ${erros} erros</li>`;
+  }
+  rankingHtml+="</ul>";
+  document.getElementById("ranking").innerHTML=rankingHtml;
+}
+
+// ---------- VOLTAR MENU ----------
+function voltarMenu(){
+  document.querySelectorAll("#tela-menu,#tela-salas,#tela-sala,#tela-jogo,#tela-fim").forEach(div=>div.style.display="none");
+  document.getElementById("tela-menu").style.display="block";
+}
+
+// ---------- SAIR SALA ----------
+function sairSala(){ salaAtual=null; voltarMenu(); }
+</script>
+</body>
+</html>
+
