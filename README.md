@@ -1,1 +1,1 @@
-# ToyArt---QUIZ
+# ToyArt-QUIZ
